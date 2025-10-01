@@ -1,12 +1,12 @@
 # Uncomment the required imports before adding the code
 
-# from django.shortcuts import render
-# from django.http import HttpResponseRedirect, HttpResponse
-# from django.contrib.auth.models import User
-# from django.shortcuts import get_object_or_404, render, redirect
-# from django.contrib.auth import logout
-# from django.contrib import messages
-# from datetime import datetime
+from django.shortcuts import render
+from django.http import HttpResponseRedirect, HttpResponse
+from django.contrib.auth.models import User
+from django.shortcuts import get_object_or_404, render, redirect
+from django.contrib.auth import logout
+from django.contrib import messages
+from datetime import datetime
 
 from django.http import JsonResponse
 from django.contrib.auth import login, authenticate
@@ -39,13 +39,48 @@ def login_user(request):
     return JsonResponse(data)
 
 # Create a `logout_request` view to handle sign out request
-# def logout_request(request):
-# ...
+def logout_user(request):
+    logout(request)  # Terminate user session
+    data = {"userName": ""}  # Return empty username
+    return JsonResponse(data)
 
 # Create a `registration` view to handle sign up request
-# @csrf_exempt
-# def registration(request):
-# ...
+@csrf_exempt
+def registration_request(request):
+    if request.method == "POST":
+        try:
+            # Lấy dữ liệu từ body JSON
+            data = json.loads(request.body)
+            username = data.get("userName")
+            password = data.get("password")
+            email = data.get("email")
+            first_name = data.get("firstName")
+            last_name = data.get("lastName")
+
+            # Kiểm tra nếu username đã tồn tại
+            if User.objects.filter(username=username).exists():
+                return JsonResponse({"error": "Already Registered", "status": False})
+
+            # Tạo user mới
+            user = User.objects.create_user(
+                username=username,
+                password=password,
+                email=email,
+                first_name=first_name,
+                last_name=last_name
+            )
+
+            # Đăng nhập tự động
+            login(request, user)
+
+            return JsonResponse({"userName": username, "status": True})
+
+        except Exception as e:
+            return JsonResponse({"error": str(e), "status": False})
+
+    # Nếu không phải POST
+    return JsonResponse({"error": "Invalid request method", "status": False})
+
 
 # # Update the `get_dealerships` view to render the index page with
 # a list of dealerships
